@@ -1,0 +1,272 @@
+# Azure DevOps Pipeline for Build and Release
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+variables:
+- group: JohnVariableGroup
+
+# pr: none
+
+# schedules:
+# - cron: 45 6 * 12 3
+#   branches:
+#     include:
+#       - tolu
+#     exclude:
+#       - main
+#       - kevin
+#       - john
+#       - test
+#       - victor
+
+trigger:
+  branches:
+    include:
+      - john
+      - dev
+    exclude:
+      - main
+  paths:
+    exclude:
+      - documentation/*
+    
+pool:
+  vmImage: windows-2019
+  # vmImage: ubuntu-latest
+
+stages:
+- stage: BuildStage
+  displayName: Build Stage
+  jobs:
+  - job: CreateAzureInfrastructure
+    displayName: 'Create Azure Infrastructure'
+    steps:
+    - script: env | sort
+      displayName: 'Environment Variables'
+
+    - task: PowerShell@2
+      name: LoginToAzureCLI
+      displayName: 'Login to Azure CLI'
+      inputs:
+        targetType: 'inline'
+        script: |        
+          az login --service-principal `
+          -u $(serviceprincipalid) `
+          -p $(serviceprincipalpw) `
+          -t ${env:TENANT}
+      
+#     - task: PowerShell@2
+#       name: BuildInfrastructure
+#       displayName: 'Build Infrastructure'
+#       inputs:
+#         filePath: 'infrastructure/infra-john.ps1'
+#         workingDirectory: '$(Build.SourcesDirectory)'
+    
+# - stage: TestStage
+#   displayName: 'Test Stage'
+#   dependsOn: [BuildStage]
+#   condition: always()
+#   jobs:
+#   - job: UpdateInfrastructure
+#     steps:
+       
+#     - task: PowerShell@2
+#       name: VariableFromPreviousStage
+#       displayName: 'Get Variable Name Across Stages'
+#       inputs:
+#         targetType: 'inline'
+#         script: |
+#           Write-Host $[ dependencies.BuildStage.outputs['GetDataDiskName.DiskName'] ]
+            # Write-Host "Testing stage completed"
+
+# - stage: DeploymentStage
+#   dependsOn: [TestStage]
+#   displayName: 'Deployment Stage'
+#   condition: eq(dependencies.BuildStage.result,'Failed')
+#   jobs:
+#   - deployment: DeploymentStage
+#     displayName: 'Deployment Stage'
+#     environment: 'DevEnvironment'
+#     strategy:
+#       runOnce:
+#         deploy:
+#           steps:
+#           - task: PowerShell@2
+#             name: CheckCurrentDirectory
+#             inputs:
+#               targetType: 'inline'
+#               script: |        
+#                 echo 'This stage depends on Test Stage'
+    
+          # - task: PowerShell@2
+          #   displayName: 'Access Artifacts'
+          #   inputs:
+          #     targetType: 'inline'
+          #     script: 'cat $(Pipeline.Workspace)/infra/infra-john.ps1'
+
+# - stage: OperationsStage
+#   displayName: 'Operations Stage'
+#   jobs:
+#   - job: OSConfiguration
+#     displayName: 'OS Configuration'
+#     steps:
+    
+#           Code works for paging file
+#     - task: PowerShellOnTargetMachines@3
+#       displayName: 'Update Paging File'
+#       inputs:
+#         Machines: '$(dnsname)'
+#         UserName: '$(vmusername)'
+#         UserPassword: '$(vmpassword)'
+#         InlineScript: |
+#                 # Windows PowerShell Command to Update Paging File Size
+#                 Write-Output "Check Current Paging File Setting"
+#                 $pagefile = Get-WmiObject Win32_ComputerSystem -EnableAllPrivileges
+#                 $pagefile.AutomaticManagedPagefile = $false
+#                 $pagefile.put() | Out-Null
+                
+#                 Write-Output "Set New Paging Files Initial and Maximum Sizes"
+#                 $pagefileset = Get-WmiObject Win32_pagefilesetting
+#                 $pagefileset.InitialSize = 1024
+#                 $pagefileset.MaximumSize = 2048
+#                 $pagefileset.Put() | Out-Null
+                
+#                 Write-Output "Display New Values"
+#                 Write-Output "Initial Size is $($pagefileset.InitialSize)"
+#                 Write-Output "Maximum Size is $($pagefileset.MaximumSize)"
+                
+#                 Write-Output "Restart the VM to update Paging File"
+#                 # shutdown /r /t 10 /c "Restarting to update Paging File Size" /d p:2:4
+#         NewPsSessionOptionArguments: '-SkipCACheck -SkipCNCheck -SkipRevocationCheck -IdleTimeout 7200000 -OperationTimeout 0 -OutputBufferingMode Block'
+
+
+      # - task: PowerShell@2
+      #   name: GetSASKey1
+      #   displayName: 'Get Storage Account Key 1'
+      #   inputs:
+      #     targetType: 'inline'
+      #     script: |
+      #       $varSAKey = az storage account keys list --account-name $(storageaccountname) --query [].value `
+      #         --query [].value `
+      #         | ConvertFrom-Json `
+      #         | Select-Object -First 1
+      #       Write-Host "##vso[task.setvariable variable=varSASKey1]$varSAKey"
+
+      #Installing of IIS Service (Completed)
+      # - task: PowerShellOnTargetMachines@3
+      #   displayName: 'Install IIS Service'
+      #   inputs:
+      #     Machines: '$(dnsname)'
+      #     UserName: '$(vmusername)'
+      #     UserPassword: '$(vmpassword)'
+      #     InlineScript: 'Install-WindowsFeature -Name Web-Server -IncludeAllSubFeature -IncludeManagementTools -ComputerName $(vmname)'
+      #     NewPsSessionOptionArguments: '-SkipCACheck -SkipCNCheck -SkipRevocationCheck -IdleTimeout 7200000 -OperationTimeout 0 -OutputBufferingMode Block'
+
+    #   #Code works, but not on the mounted network drive
+      # - task: PowerShellOnTargetMachines@3
+      #   displayName: 'Create folders'
+      #   inputs:
+      #     Machines: '$(dnsname)'
+      #     UserName: '$(vmusername)'
+      #     UserPassword: '$(vmpassword)'
+      #     # InlineScript: 'new-item -type directory -path E:\inetpub\wwwroot -Force'
+            # (For copying of wwwroot folder=> Copy-Item -Path "C:\inetpub\wwwroot" -Destination "Z:\inetpub" -Recurse )
+      #     InlineScript: 'Get-PSDrive'
+      #     NewPsSessionOptionArguments: '-SkipCACheck -SkipCNCheck -SkipRevocationCheck -IdleTimeout 7200000 -OperationTimeout 0 -OutputBufferingMode Block'
+
+      #Installing of FTP Service (Completed)
+      # - task: PowerShellOnTargetMachines@3
+      #   displayName: 'Install FTP Service'
+      #   inputs:
+      #     Machines: '$(dnsname)'
+      #     UserName: '$(vmusername)'
+      #     UserPassword: '$(vmpassword)'
+      #     InlineScript: 'Install-WindowsFeature Web-FTP-Server ' 
+      #     NewPsSessionOptionArguments: '-SkipCACheck -SkipCNCheck -SkipRevocationCheck -IdleTimeout 7200000 -OperationTimeout 0 -OutputBufferingMode Block'
+      # - task: PowerShellOnTargetMachines@3
+      #   displayName: 'Import module for FTP Service'
+      #   inputs:
+      #     Machines: '$(dnsname)'
+      #     UserName: '$(vmusername)'
+      #     UserPassword: '$(vmpassword)'
+      #     InlineScript: 'Import-Module WebAdministration'
+      #     NewPsSessionOptionArguments: '-SkipCACheck -SkipCNCheck -SkipRevocationCheck -IdleTimeout 7200000 -OperationTimeout 0 -OutputBufferingMode Block'
+      
+
+          #(stop IIS Service (Code works on the VM itself not through WinRM)
+    # - task: PowerShellOnTargetMachines@3
+    #   displayName: stop IIS Service
+    #   inputs:
+    #     Machines: '$(dnsname)'
+    #     UserName: '$(vmusername)'
+    #     UserPassword: '$(vmpassword)'
+    #     InlineScript: 'PsExec \\Server2 -u $(vmusername) -p $(vmpassword) IISReset /STOP'
+    # #     InlineScript: 'invoke-command -ComputerName IIS-Server -scriptblock {iisreset /START}'
+    #     NewPsSessionOptionArguments: '-SkipCACheck -SkipCNCheck -SkipRevocationCheck -IdleTimeout 7200000 -OperationTimeout 0 -OutputBufferingMode Block'
+      
+     
+
+        # Create the FTP site
+    # - task: PowerShellOnTargetMachines@3
+    #   displayName: 'Create the FTP site'
+    #   inputs:
+    #     Machines: '$(dnsname)'
+    #     UserName: '$(vmusername)'
+    #     UserPassword: '$(vmpassword)'
+    #     InlineScript: |
+            # $FTPSiteName = 'tipdev2.eastus.cloudapp.azure.com/'
+            # $FTPRootDir = 'Z:\inetpub\wwwroot\tip-poject'
+            # $FTPPort = 80
+            # New-WebFtpSite -Name $FTPSiteName -Port $FTPPort -PhysicalPath $FTPRootDir
+    #       NewPsSessionOptionArguments: '-SkipCACheck -SkipCNCheck -SkipRevocationCheck -IdleTimeout 7200000 -OperationTimeout 0 -OutputBufferingMode Block'
+      
+
+          #Creating table in SQL Database (Code works)
+      # - task: SqlAzureDacpacDeployment@1
+      #   displayName: 'Inserting into table in SQL Database'
+      #   inputs:
+      #     azureSubscription: 'Tolu Service Connection'
+      #     AuthenticationType: 'server'
+      #     ServerName: '$(sqlservername).database.windows.net'
+      #     DatabaseName: '$(databasename)'
+      #     SqlUsername: '$(sqlusername)'
+      #     SqlPassword: '$(sqlpassword)'
+      #     deployType: 'InlineSqlTask'
+      #     SqlInline: |
+      #       create table Persons (
+      #       	PersonID INT,
+      #       	FirstName VARCHAR(50),
+      #       	LastName VARCHAR(50),
+      #       	Address VARCHAR(50),
+      #       	City VARCHAR(50)
+      #       );
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (1, 'Josie', 'Gerrans', '35780 Katie Plaza', 'Stockholm');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (2, 'Junia', 'Darben', '33 Annamark Way', 'Chenjiatan');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (3, 'Giffie', 'Clutterham', '842 Truax Alley', 'Laoqiao');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (4, 'Danice', 'Vignal', '08706 Calypso Avenue', 'Kishi');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (5, 'Ermin', 'Phillcock', '53 Waxwing Lane', 'Eadestown');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (6, 'Cassandre', 'McGloughlin', '819 Loeprich Park', 'Kotabaru');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (7, 'Gibb', 'Leatherbarrow', '6471 Annamark Lane', 'Santiago');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (8, 'Rorie', 'Soggee', '63 Reindahl Alley', 'Changdai');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (9, 'Zulema', 'Gook', '31 Red Cloud Drive', 'Butungan');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (10, 'Alex', 'Leys', '506 Towne Trail', 'Huangma');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (11, 'Kurt', 'Bowshire', '3 Summit Point', 'Itajaí');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (12, 'Hyacinth', 'Buckner', '70 Grover Lane', 'Praia da Tocha');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (13, 'Godard', 'Tarburn', '12 Fallview Avenue', 'Selínia');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (14, 'Derrick', 'Elder', '33472 Lindbergh Hill', 'North Battleford');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (15, 'Lisha', 'Hamber', '11 Miller Pass', 'San Juan de la Maguana');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (16, 'Mata', 'Loachhead', '165 Becker Junction', 'Aygeshat');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (17, 'Martica', 'Staner', '09278 Graedel Hill', 'Héroumbili');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (18, 'Roley', 'Muldownie', '0 Killdeer Lane', 'Wonorejo Dua');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (19, 'Cesare', 'Swinfon', '4302 Buena Vista Lane', 'Wydminy');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (20, 'Efren', 'Vaggs', '2 Norway Maple Circle', 'Banjar Budakeling');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (21, 'Onfre', 'MacPhail', '69707 Helena Hill', 'Ruma');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (22, 'Cherianne', 'Blay', '1933 Debra Hill', 'Phatthana Nikhom');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (23, 'Clemente', 'Costello', '66581 Warner Point', 'Santiaoshi');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (24, 'Ansel', 'Udell', '2 Crescent Oaks Place', 'Chongwen');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (25, 'Trisha', 'Longstreeth', '603 Schlimgen Plaza', 'Anulid');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (26, 'Maxim', 'Gainfort', '6 Washington Way', 'Buenavista');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (27, 'Casie', 'Gorler', '1 Debra Park', 'Yanglinshi');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (28, 'Blinni', 'Romagosa', '75 Messerschmidt Circle', 'Songzhuang');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (29, 'Gerry', 'Chapellow', '0923 Sachtjen Drive', 'Fundong');
+      #       insert into Persons (PersonID, FirstName, LastName, Address, City) values (30, 'Morgan', 'Neeson', '2 Union Point', 'Kyzylorda');
+      #     IpDetectionMethod: 'AutoDetect'

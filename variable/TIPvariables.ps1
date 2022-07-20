@@ -1,0 +1,20 @@
+9# Define Variables for New Resource Group
+$rPrefix = "tip" # This should be your department name
+$envSuffix = "dev" # This should be either 'dev', 'stag' or 'prod'
+$rgName = "$rPrefix-$envSuffix"
+$location =  "East US" # Choose from 'East US 2' and 'Centra US'
+$ipPrefix = "10.0" # Specify the first two groups for your IP Address
+$subnet1 = "default"
+$subnet2 = "virtualmachine"
+$subnet3 = "database"
+$subnet4 = "webapp"
+$myVm = "TIP-server"
+$interface = "TIP-serverVMNic"
+$vmImage = "Win2016Datacenter"
+$adminUser ="TIP"
+$adminPassword ="TipProject20@"
+$emailAddress = "johnseyi51@gmail.com"
+$admin = "TIP2021"
+$adminPassCode ="TipProject20@"
+$storageacctname = "tipsa"
+$publicipDNS = "tipdev2"
